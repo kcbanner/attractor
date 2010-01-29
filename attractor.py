@@ -33,6 +33,8 @@ class Display:
         Label(frame, text="d:").grid(row=1, column=2, sticky=E)
         Label(frame, text="Resolution:").grid(row=2, column=0, sticky=E)
         Label(frame, text="Intensity:").grid(row=3, column=0, sticky=E)
+	self.iterations_label = Label(frame, text="Iterations: ")
+	self.iterations_label.grid(row=4, column=0)
 
         self.a_entry = Entry(frame)
         self.b_entry = Entry(frame)
@@ -95,6 +97,7 @@ class Display:
         while self.running:
             if self.render_flag:
                 self.attractor_render(0.05)
+                self.iterations_label["text"] = "Iterations: %s" % self.attractor.iterations
             else:
                 time.sleep(0.05)
                 
