@@ -23,25 +23,40 @@ class Display:
         self.attractor = AttractorImage()
         self.attractor.render(0.1)
 
-        frame = Frame(master)
+        frame = Frame(master, padx=3, pady=3)
         frame.grid(row=0, column=0)
         self.frame = frame
 
-        Label(frame, text="a:").grid(row=0, column=0, sticky=E)
-        Label(frame, text="b:").grid(row=0, column=2, sticky=E)
-        Label(frame, text="c:").grid(row=1, column=0, sticky=E)
-        Label(frame, text="d:").grid(row=1, column=2, sticky=E)
-        Label(frame, text="Resolution:").grid(row=2, column=0, sticky=E)
-        Label(frame, text="Intensity:").grid(row=3, column=0, sticky=E)
-	self.iterations_label = Label(frame, text="Iterations: ")
-	self.iterations_label.grid(row=4, column=0)
+        left_top_frame = LabelFrame(frame, relief=GROOVE,
+                                    borderwidth=2, text="Attractor Parameters:")
+        left_bottom_frame = LabelFrame(frame, relief=GROOVE,
+                                       borderwidth=2, text="Image Properties:")
+        right_frame = Frame(frame, relief=GROOVE, borderwidth=2)
 
-        self.a_entry = Entry(frame)
-        self.b_entry = Entry(frame)
-        self.c_entry = Entry(frame)
-        self.d_entry = Entry(frame)
-        self.resolution_entry = Entry(frame)
-        self.intensity_entry = Entry(frame)
+        left_top_frame.grid(row=0, column=0, sticky=N+W+S+E)
+        left_bottom_frame.grid(row=1, column=0, sticky=N+W+S+E)
+
+        right_frame.grid(row=0, column=1, rowspan=2)       
+
+        Label(left_top_frame, text="a:").grid(row=1, column=0, sticky=E)
+        Label(left_top_frame, text="b:").grid(row=1, column=2, sticky=E)
+        Label(left_top_frame, text="c:").grid(row=2, column=0, sticky=E)
+        Label(left_top_frame, text="d:").grid(row=2, column=2, sticky=E)
+        Label(left_top_frame, text="Resolution:").grid(row=3, column=0, sticky=E)
+        Label(left_top_frame, text="Intensity:").grid(row=4, column=0, sticky=E)
+        Label(left_bottom_frame, text="Iterations:").grid(row=0, column=0, sticky=E)
+        Label(left_bottom_frame, text="Image dimensions:").grid(row=1, column=0, sticky=E)
+	self.iterations_label = Label(left_bottom_frame, text="...")
+	self.iterations_label.grid(row=0, column=1)
+	self.dimensions_label = Label(left_bottom_frame, text="...")
+	self.dimensions_label.grid(row=1, column=1)
+
+        self.a_entry = Entry(left_top_frame, width=5)
+        self.b_entry = Entry(left_top_frame, width=5)
+        self.c_entry = Entry(left_top_frame, width=5)
+        self.d_entry = Entry(left_top_frame, width=5)
+        self.resolution_entry = Entry(left_top_frame, width=5)
+        self.intensity_entry = Entry(left_top_frame, width=5)
 
         self.a_entry.insert(0, a)
         self.b_entry.insert(0, b)
@@ -50,20 +65,20 @@ class Display:
         self.resolution_entry.insert(0, resolution)
         self.intensity_entry.insert(0, intensity)
 
-        self.a_entry.grid(row=0, column=1)
-        self.b_entry.grid(row=0, column=3)
-        self.c_entry.grid(row=1, column=1)
-        self.d_entry.grid(row=1, column=3)        
-        self.resolution_entry.grid(row=2, column=1)
-        self.intensity_entry.grid(row=3, column=1)        
+        self.a_entry.grid(row=1, column=1)
+        self.b_entry.grid(row=1, column=3)
+        self.c_entry.grid(row=2, column=1)
+        self.d_entry.grid(row=2, column=3)        
+        self.resolution_entry.grid(row=3, column=1)
+        self.intensity_entry.grid(row=4, column=1)        
 
         attractor_img = self.attractor.get_photo_image(512, 512)
-        self.image_canvas = Canvas(frame, width=512, height=512)
+        self.image_canvas = Canvas(right_frame, width=512, height=512)
         self.image_canvas.image = attractor_img
         self.image_canvas.create_image((0,0),
                                        {'image': attractor_img,
                                         'anchor': NW})
-        self.image_canvas.grid(row=0, column=4,
+        self.image_canvas.grid(row=0, column=0,
                                padx=5, pady=5,
                                sticky=W+E+N+S,
                                rowspan=5)
@@ -71,13 +86,25 @@ class Display:
         self.render_button = Button(frame,
                                     text="Render",
                                     command=self.toggle_render)
-        self.render_button.grid(row=5, column=3)
+        self.render_button.grid(row=2, column=1, sticky=E+W)
+
+        self.save_button = Button(frame,
+                                  text="Save",
+                                  command=self.save_image)
+        self.save_button.grid(row=2, column=0, sticky=E+W)
         
         self.exit_button = Button(frame, text="Exit", command=self.quit)
-        self.exit_button.grid(row=5, column=4)
+        self.exit_button.grid(row=3, column=0, sticky=E+W)
 
         self.running = True
         self.render_thread = threading.Thread(target=self.worker_thread)
+
+    def save_image(self):
+        filename = "a%sb%sc%sd%s.png" % (self.attractor.a,
+                                         self.attractor.b,
+                                         self.attractor.c,
+                                         self.attractor.d)
+        self.attractor.im.save(filename)
 
     def quit(self):
         self.render_flag = False
@@ -90,6 +117,8 @@ class Display:
             self.render_button["text"] = "Render"
         else:
             self.update_attractor()
+            img = self.attractor.im
+            self.dimensions_label["text"] = "%sx%s" % (img.size[0], img.size[1])
             self.render_flag = True
             self.render_button["text"] = "Pause"
 
@@ -97,7 +126,7 @@ class Display:
         while self.running:
             if self.render_flag:
                 self.attractor_render(0.05)
-                self.iterations_label["text"] = "Iterations: %s" % self.attractor.iterations
+                self.iterations_label["text"] = "%s" % self.attractor.iterations
             else:
                 time.sleep(0.05)
                 
