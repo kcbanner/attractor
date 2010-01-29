@@ -11,7 +11,7 @@ a = 2.0
 b = 2.0
 c = 2.0
 d = 2.0
-resolution = 1
+resolution = 2
 intensity = 0.95
 
 attrs = ['a', 'b', 'c', 'd', 'intensity', 'resolution']
@@ -20,7 +20,12 @@ class Display:
     render_flag = False
 
     def __init__(self, master):
-        self.attractor = AttractorImage()
+        self.attractor = AttractorImage(resolution=resolution,
+                                        a=a,
+                                        b=b,
+                                        c=c,
+                                        d=d,
+                                        intensity=intensity)
         self.attractor.render(0.1)
 
         frame = Frame(master, padx=3, pady=3)
@@ -45,11 +50,14 @@ class Display:
         Label(left_top_frame, text="Resolution:").grid(row=3, column=0, sticky=E)
         Label(left_top_frame, text="Intensity:").grid(row=4, column=0, sticky=E)
         Label(left_bottom_frame, text="Iterations:").grid(row=0, column=0, sticky=E)
-        Label(left_bottom_frame, text="Image dimensions:").grid(row=1, column=0, sticky=E)
+        Label(left_bottom_frame, text="Iterations/sec:").grid(row=1, column=0, sticky=E)
+        Label(left_bottom_frame, text="Image dimensions:").grid(row=2, column=0, sticky=E)
 	self.iterations_label = Label(left_bottom_frame, text="...")
-	self.iterations_label.grid(row=0, column=1)
+	self.iterations_label.grid(row=0, column=1, sticky=E+W)
+	self.rate_label = Label(left_bottom_frame, text="...")
+	self.rate_label.grid(row=1, column=1, sticky=E+W)
 	self.dimensions_label = Label(left_bottom_frame, text="...")
-	self.dimensions_label.grid(row=1, column=1)
+	self.dimensions_label.grid(row=2, column=1, sticky=E+W)
 
         self.a_entry = Entry(left_top_frame, width=5)
         self.b_entry = Entry(left_top_frame, width=5)
@@ -120,13 +128,17 @@ class Display:
             img = self.attractor.im
             self.dimensions_label["text"] = "%sx%s" % (img.size[0], img.size[1])
             self.render_flag = True
-            self.render_button["text"] = "Pause"
+            self.render_button["text"] = "Stop"
 
     def worker_thread(self):
         while self.running:
             if self.render_flag:
+                now = time.time()
+                inow = self.attractor.iterations
                 self.attractor_render(0.05)
+                rate = int((self.attractor.iterations-inow)/(time.time()-now))
                 self.iterations_label["text"] = "%s" % self.attractor.iterations
+                self.rate_label["text"] = "%s" % rate
             else:
                 time.sleep(0.05)
                 
